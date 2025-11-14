@@ -1,5 +1,5 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
-
+import numpy as np
 from __future__ import annotations
 
 from collections import defaultdict
@@ -66,10 +66,45 @@ class ObjectCounter(BaseSolution):
         self.out_inter_vehicle_frame_gap = defaultdict(lambda: {"frame_start": 0, "frame_end": 0})
         self.in_inter_vehicle_frame_gap = defaultdict(lambda: {"frame_start": 0, "frame_end": 0})
         self.in_previous_track_id = None
-        self.out_previous_track_id = None
+        self.out_previous_track_id = None      
         
     def vehicle_frame_gaps(self):
-        print(f"in_inter_vehicle_frame_gap\n{self.in_inter_vehicle_frame_gap}\n\nout_inter_vehicle_frame_gap{self.out_inter_vehicle_frame_gap}")
+        print(f"in_inter_vehicle_frame_gap\n{self.in_inter_vehicle_frame_gap}\n\nout_inter_vehicle_frame_gap{self.out_inter_vehicle_frame_gap}")  
+        
+    def calculate_summary_stats(self, inter_vehicle_frame_gap):
+        diffs = [v['frame_end'] - v['frame_start'] for v in inter_vehicle_frame_gap.values() if v['frame_end'] > 0]
+        if diffs:
+            diffs_arr = np.array(diffs)
+            mean_diff = np.mean(diffs_arr)
+            min_diff = np.min(diffs_arr)
+            max_diff = np.max(diffs_arr)
+            std_diff = np.std(diffs_arr)
+            median_diff = np.median(diffs_arr)
+            return {
+                'mean':mean_diff,
+                'min':min_diff,
+                'max':max_diff,
+                'std':std_diff,
+                'median':median_diff
+                }
+        else:
+            return None
+        
+    def update_inter_vehicle_frame_gap(self):
+        out_stats = self.calculate_summary_stats(self.out_inter_vehicle_frame_gap)
+        in_stats = self.calculate_summary_stats(self.in_inter_vehicle_frame_gap)
+        if in_stats is not None:
+            self.in_inter_vehicle_frame_gap_mean = in_stats['mean']
+            self.in_inter_vehicle_frame_gap_min = in_stats['min']
+            self.in_inter_vehicle_frame_gap_max = in_stats['max']
+            self.in_inter_vehicle_frame_gap_median = in_stats['median']
+            self.in_inter_vehicle_frame_gap_std = in_stats['std']
+        if out_stats is not None:
+            self.out_inter_vehicle_frame_gap_mean = out_stats['mean']
+            self.out_inter_vehicle_frame_gap_min = out_stats['min']
+            self.out_inter_vehicle_frame_gap_max = out_stats['max']
+            self.out_inter_vehicle_frame_gap_median = out_stats['median']
+            self.out_inter_vehicle_frame_gap_std = out_stats['std']
         
 
     def count_objects(
@@ -252,7 +287,8 @@ class ObjectCounter(BaseSolution):
             if len(self.track_history[track_id]) > 1:
                 prev_position = self.track_history[track_id][-2]
             self.count_objects(self.track_history[track_id][-1], track_id, prev_position, cls)  # object counting
-
+        
+        self.update_inter_vehicle_frame_gap()
         plot_im = self.annotator.result()
         self.display_counts(plot_im)  # Display the counts on the frame
         self.display_output(plot_im)  # Display output with base class function
