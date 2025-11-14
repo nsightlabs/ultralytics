@@ -239,14 +239,14 @@ class BaseSolution:
 
     def __call__(self, *args: Any, **kwargs: Any):
         """Allow instances to be called like a function with flexible arguments."""
+        self.frame_no += 1
         with self.profilers[1]:
             result = self.process(*args, **kwargs)  # Call the subclass-specific process method
         track_or_predict = "predict" if type(self).__name__ == "ObjectCropper" else "track"
         track_or_predict_speed = self.profilers[0].dt * 1e3
         solution_speed = (self.profilers[1].dt - self.profilers[0].dt) * 1e3  # solution time = process - track
         result.speed = {track_or_predict: track_or_predict_speed, "solution": solution_speed}
-        if self.CFG["verbose"]:
-            self.frame_no += 1
+        if self.CFG["verbose"]:            
             counts = Counter(self.clss)  # Only for logging.
             LOGGER.info(
                 f"{self.frame_no}: {result.plot_im.shape[0]}x{result.plot_im.shape[1]} {solution_speed:.1f}ms,"
