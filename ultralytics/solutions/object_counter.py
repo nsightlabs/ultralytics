@@ -50,6 +50,27 @@ class ObjectCounter(BaseSolution):
         self.show_in = self.CFG["show_in"]
         self.show_out = self.CFG["show_out"]
         self.margin = self.line_width * 2  # Scales the background rectangle size to display counts properly
+        
+        #custom properties
+        self.in_inter_vehicle_frame_gap_mean = 0
+        self.in_inter_vehicle_frame_gap_min = 0
+        self.in_inter_vehicle_frame_gap_max = 0
+        self.in_inter_vehicle_frame_gap_median = 0
+        self.in_inter_vehicle_frame_gap_std = 0
+        self.out_inter_vehicle_frame_gap_mean = 0
+        self.out_inter_vehicle_frame_gap_min = 0
+        self.out_inter_vehicle_frame_gap_max = 0
+        self.out_inter_vehicle_frame_gap_median = 0
+        self.out_inter_vehicle_frame_gap_std = 0
+        
+        self.out_inter_vehicle_frame_gap = defaultdict(lambda: {"frame_start": 0, "frame_end": 0})
+        self.in_inter_vehicle_frame_gap = defaultdict(lambda: {"frame_start": 0, "frame_end": 0})
+        self.in_previous_track_id = None
+        self.out_previous_track_id = None
+        
+    def vehicle_frame_gaps(self):
+        print(f"in_inter_vehicle_frame_gap\n{self.in_inter_vehicle_frame_gap}\n\nout_inter_vehicle_frame_gap{self.out_inter_vehicle_frame_gap}")
+        
 
     def count_objects(
         self,
@@ -86,16 +107,54 @@ class ObjectCounter(BaseSolution):
                     if current_centroid[0] > prev_position[0]:  # Moving right
                         self.in_count += 1
                         self.classwise_count[self.names[cls]]["IN"] += 1
+                        
+                        #custom code
+                        if self.in_previous_track_id is None:
+                            self.in_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                            self.in_previous_track_id = track_id
+                        else:
+                            self.in_inter_vehicle_frame_gap[self.in_previous_track_id]['frame_end'] = self.frame_no
+                            self.in_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                            self.in_previous_track_id = track_id
+                            
                     else:  # Moving left
                         self.out_count += 1
                         self.classwise_count[self.names[cls]]["OUT"] += 1
+                        
+                        #custom code
+                        if self.out_previous_track_id is None:
+                            self.out_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                            self.out_previous_track_id = track_id
+                        else:
+                            self.out_inter_vehicle_frame_gap[self.out_previous_track_id]['frame_end'] = self.frame_no
+                            self.out_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                            self.out_previous_track_id = track_id
+                        
                 # Horizontal region: Compare y-coordinates to determine direction
                 elif current_centroid[1] > prev_position[1]:  # Moving downward
                     self.in_count += 1
                     self.classwise_count[self.names[cls]]["IN"] += 1
+                    
+                    #custom code
+                    if self.in_previous_track_id is None:
+                        self.in_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.in_previous_track_id = track_id
+                    else:
+                        self.in_inter_vehicle_frame_gap[self.in_previous_track_id]['frame_end'] = self.frame_no
+                        self.in_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.in_previous_track_id = track_id
                 else:  # Moving upward
                     self.out_count += 1
                     self.classwise_count[self.names[cls]]["OUT"] += 1
+                    
+                    #custom code
+                    if self.out_previous_track_id is None:
+                        self.out_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.out_previous_track_id = track_id
+                    else:
+                        self.out_inter_vehicle_frame_gap[self.out_previous_track_id]['frame_end'] = self.frame_no
+                        self.out_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.out_previous_track_id = track_id
                 self.counted_ids.append(track_id)
 
         elif len(self.region) > 2:  # Polygonal region
@@ -109,9 +168,27 @@ class ObjectCounter(BaseSolution):
                 ):  # Moving right or downward
                     self.in_count += 1
                     self.classwise_count[self.names[cls]]["IN"] += 1
+                    
+                    #custom code
+                    if self.in_previous_track_id is None:
+                        self.in_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.in_previous_track_id = track_id
+                    else:
+                        self.in_inter_vehicle_frame_gap[self.in_previous_track_id]['frame_end'] = self.frame_no
+                        self.in_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.in_previous_track_id = track_id
                 else:  # Moving left or upward
                     self.out_count += 1
                     self.classwise_count[self.names[cls]]["OUT"] += 1
+                    
+                    #custom code
+                    if self.out_previous_track_id is None:
+                        self.out_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.out_previous_track_id = track_id
+                    else:
+                        self.out_inter_vehicle_frame_gap[self.out_previous_track_id]['frame_end'] = self.frame_no
+                        self.out_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.out_previous_track_id = track_id
                 self.counted_ids.append(track_id)
 
     def display_counts(self, plot_im) -> None:
@@ -187,4 +264,17 @@ class ObjectCounter(BaseSolution):
             out_count=self.out_count,
             classwise_count=dict(self.classwise_count),
             total_tracks=len(self.track_ids),
+            
+            #custom result properties
+            in_inter_vehicle_frame_gap_mean = self.in_inter_vehicle_frame_gap_mean,
+            in_inter_vehicle_frame_gap_std = self.in_inter_vehicle_frame_gap_std,
+            in_inter_vehicle_frame_gap_min = self.in_inter_vehicle_frame_gap_min,
+            in_inter_vehicle_frame_gap_max = self.in_inter_vehicle_frame_gap_max,
+            in_inter_vehicle_frame_gap_median = self.in_inter_vehicle_frame_gap_median,
+            out_inter_vehicle_frame_gap_mean = self.out_inter_vehicle_frame_gap_mean,
+            out_inter_vehicle_frame_gap_std = self.out_inter_vehicle_frame_gap_std,
+            out_inter_vehicle_frame_gap_min = self.out_inter_vehicle_frame_gap_min,
+            out_inter_vehicle_frame_gap_max = self.out_inter_vehicle_frame_gap_max,
+            out_inter_vehicle_frame_gap_median = self.out_inter_vehicle_frame_gap_median,
+            
         )
