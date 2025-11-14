@@ -789,11 +789,16 @@ class SolutionResults:
         self.speed = {}
         
         #Custom properties
-        self.inter_vehicle_frame_gap_mean = 0
-        self.inter_vehicle_frame_gap_std = 0
-        self.inter_vehicle_frame_gap_min = 0
-        self.inter_vehicle_frame_gap_max = 0
-        self.inter_vehicle_frame_gap_median = 0
+        self.in_inter_vehicle_frame_gap_mean = 0
+        self.in_inter_vehicle_frame_gap_std = 0
+        self.in_inter_vehicle_frame_gap_min = 0
+        self.in_inter_vehicle_frame_gap_max = 0
+        self.in_inter_vehicle_frame_gap_median = 0
+        self.out_inter_vehicle_frame_gap_mean = 0
+        self.out_inter_vehicle_frame_gap_std = 0
+        self.out_inter_vehicle_frame_gap_min = 0
+        self.out_inter_vehicle_frame_gap_max = 0
+        self.out_inter_vehicle_frame_gap_median = 0
 
         # Override with user-defined values
         self.__dict__.update(kwargs)
