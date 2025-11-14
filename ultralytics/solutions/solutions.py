@@ -787,6 +787,13 @@ class SolutionResults:
         self.speed_dict = {}  # for speed estimation
         self.total_crop_objects = 0
         self.speed = {}
+        
+        #Custom properties
+        self.inter_vehicle_frame_gap_mean = 0
+        self.inter_vehicle_frame_gap_std = 0
+        self.inter_vehicle_frame_gap_min = 0
+        self.inter_vehicle_frame_gap_max = 0
+        self.inter_vehicle_frame_gap_median = 0
 
         # Override with user-defined values
         self.__dict__.update(kwargs)
