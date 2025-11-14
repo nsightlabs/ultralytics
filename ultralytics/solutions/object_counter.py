@@ -1,9 +1,9 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
-import numpy as np
 from __future__ import annotations
 
 from collections import defaultdict
 from typing import Any
+import numpy as np
 
 from ultralytics.solutions.solutions import BaseSolution, SolutionAnnotator, SolutionResults
 from ultralytics.utils.plotting import colors
