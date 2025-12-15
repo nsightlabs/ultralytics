@@ -246,7 +246,7 @@ class BaseSolution:
         track_or_predict_speed = self.profilers[0].dt * 1e3
         solution_speed = (self.profilers[1].dt - self.profilers[0].dt) * 1e3  # solution time = process - track
         result.speed = {track_or_predict: track_or_predict_speed, "solution": solution_speed}
-        if self.CFG["verbose"]:            
+        if self.CFG["verbose"]:
             counts = Counter(self.clss)  # Only for logging.
             LOGGER.info(
                 f"{self.frame_no}: {result.plot_im.shape[0]}x{result.plot_im.shape[1]} {solution_speed:.1f}ms,"
@@ -787,8 +787,8 @@ class SolutionResults:
         self.speed_dict = {}  # for speed estimation
         self.total_crop_objects = 0
         self.speed = {}
-        
-        #Custom properties
+
+        # Custom properties
         self.in_inter_vehicle_frame_gap_mean = 0
         self.in_inter_vehicle_frame_gap_std = 0
         self.in_inter_vehicle_frame_gap_min = 0
