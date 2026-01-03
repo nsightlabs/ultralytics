@@ -1,8 +1,10 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
 from __future__ import annotations
 
 from collections import defaultdict
 from typing import Any
+
 import numpy as np
 
 from ultralytics.solutions.solutions import BaseSolution, SolutionAnnotator, SolutionResults
@@ -50,8 +52,8 @@ class ObjectCounter(BaseSolution):
         self.show_in = self.CFG["show_in"]
         self.show_out = self.CFG["show_out"]
         self.margin = self.line_width * 2  # Scales the background rectangle size to display counts properly
-        
-        #custom properties
+
+        # custom properties
         self.in_inter_vehicle_frame_gap_mean = 0
         self.in_inter_vehicle_frame_gap_min = 0
         self.in_inter_vehicle_frame_gap_max = 0
@@ -62,17 +64,19 @@ class ObjectCounter(BaseSolution):
         self.out_inter_vehicle_frame_gap_max = 0
         self.out_inter_vehicle_frame_gap_median = 0
         self.out_inter_vehicle_frame_gap_std = 0
-        
+
         self.out_inter_vehicle_frame_gap = defaultdict(lambda: {"frame_start": 0, "frame_end": 0})
         self.in_inter_vehicle_frame_gap = defaultdict(lambda: {"frame_start": 0, "frame_end": 0})
         self.in_previous_track_id = None
-        self.out_previous_track_id = None      
-        
+        self.out_previous_track_id = None
+
     def vehicle_frame_gaps(self):
-        print(f"in_inter_vehicle_frame_gap\n{self.in_inter_vehicle_frame_gap}\n\nout_inter_vehicle_frame_gap{self.out_inter_vehicle_frame_gap}")  
-        
+        print(
+            f"in_inter_vehicle_frame_gap\n{self.in_inter_vehicle_frame_gap}\n\nout_inter_vehicle_frame_gap{self.out_inter_vehicle_frame_gap}"
+        )
+
     def calculate_summary_stats(self, inter_vehicle_frame_gap):
-        diffs = [v['frame_end'] - v['frame_start'] for v in inter_vehicle_frame_gap.values() if v['frame_end'] > 0]
+        diffs = [v["frame_end"] - v["frame_start"] for v in inter_vehicle_frame_gap.values() if v["frame_end"] > 0]
         if diffs:
             diffs_arr = np.array(diffs)
             mean_diff = np.mean(diffs_arr)
@@ -80,32 +84,25 @@ class ObjectCounter(BaseSolution):
             max_diff = np.max(diffs_arr)
             std_diff = np.std(diffs_arr)
             median_diff = np.median(diffs_arr)
-            return {
-                'mean':mean_diff,
-                'min':min_diff,
-                'max':max_diff,
-                'std':std_diff,
-                'median':median_diff
-                }
+            return {"mean": mean_diff, "min": min_diff, "max": max_diff, "std": std_diff, "median": median_diff}
         else:
             return None
-        
+
     def update_inter_vehicle_frame_gap(self):
         out_stats = self.calculate_summary_stats(self.out_inter_vehicle_frame_gap)
         in_stats = self.calculate_summary_stats(self.in_inter_vehicle_frame_gap)
         if in_stats is not None:
-            self.in_inter_vehicle_frame_gap_mean = in_stats['mean']
-            self.in_inter_vehicle_frame_gap_min = in_stats['min']
-            self.in_inter_vehicle_frame_gap_max = in_stats['max']
-            self.in_inter_vehicle_frame_gap_median = in_stats['median']
-            self.in_inter_vehicle_frame_gap_std = in_stats['std']
+            self.in_inter_vehicle_frame_gap_mean = in_stats["mean"]
+            self.in_inter_vehicle_frame_gap_min = in_stats["min"]
+            self.in_inter_vehicle_frame_gap_max = in_stats["max"]
+            self.in_inter_vehicle_frame_gap_median = in_stats["median"]
+            self.in_inter_vehicle_frame_gap_std = in_stats["std"]
         if out_stats is not None:
-            self.out_inter_vehicle_frame_gap_mean = out_stats['mean']
-            self.out_inter_vehicle_frame_gap_min = out_stats['min']
-            self.out_inter_vehicle_frame_gap_max = out_stats['max']
-            self.out_inter_vehicle_frame_gap_median = out_stats['median']
-            self.out_inter_vehicle_frame_gap_std = out_stats['std']
-        
+            self.out_inter_vehicle_frame_gap_mean = out_stats["mean"]
+            self.out_inter_vehicle_frame_gap_min = out_stats["min"]
+            self.out_inter_vehicle_frame_gap_max = out_stats["max"]
+            self.out_inter_vehicle_frame_gap_median = out_stats["median"]
+            self.out_inter_vehicle_frame_gap_std = out_stats["std"]
 
     def count_objects(
         self,
@@ -142,53 +139,53 @@ class ObjectCounter(BaseSolution):
                     if current_centroid[0] > prev_position[0]:  # Moving right
                         self.in_count += 1
                         self.classwise_count[self.names[cls]]["IN"] += 1
-                        
-                        #custom code
+
+                        # custom code
                         if self.in_previous_track_id is None:
-                            self.in_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                            self.in_inter_vehicle_frame_gap[track_id]["frame_start"] = self.frame_no
                             self.in_previous_track_id = track_id
                         else:
-                            self.in_inter_vehicle_frame_gap[self.in_previous_track_id]['frame_end'] = self.frame_no
-                            self.in_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                            self.in_inter_vehicle_frame_gap[self.in_previous_track_id]["frame_end"] = self.frame_no
+                            self.in_inter_vehicle_frame_gap[track_id]["frame_start"] = self.frame_no
                             self.in_previous_track_id = track_id
-                            
+
                     else:  # Moving left
                         self.out_count += 1
                         self.classwise_count[self.names[cls]]["OUT"] += 1
-                        
-                        #custom code
+
+                        # custom code
                         if self.out_previous_track_id is None:
-                            self.out_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                            self.out_inter_vehicle_frame_gap[track_id]["frame_start"] = self.frame_no
                             self.out_previous_track_id = track_id
                         else:
-                            self.out_inter_vehicle_frame_gap[self.out_previous_track_id]['frame_end'] = self.frame_no
-                            self.out_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                            self.out_inter_vehicle_frame_gap[self.out_previous_track_id]["frame_end"] = self.frame_no
+                            self.out_inter_vehicle_frame_gap[track_id]["frame_start"] = self.frame_no
                             self.out_previous_track_id = track_id
-                        
+
                 # Horizontal region: Compare y-coordinates to determine direction
                 elif current_centroid[1] > prev_position[1]:  # Moving downward
                     self.in_count += 1
                     self.classwise_count[self.names[cls]]["IN"] += 1
-                    
-                    #custom code
+
+                    # custom code
                     if self.in_previous_track_id is None:
-                        self.in_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.in_inter_vehicle_frame_gap[track_id]["frame_start"] = self.frame_no
                         self.in_previous_track_id = track_id
                     else:
-                        self.in_inter_vehicle_frame_gap[self.in_previous_track_id]['frame_end'] = self.frame_no
-                        self.in_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.in_inter_vehicle_frame_gap[self.in_previous_track_id]["frame_end"] = self.frame_no
+                        self.in_inter_vehicle_frame_gap[track_id]["frame_start"] = self.frame_no
                         self.in_previous_track_id = track_id
                 else:  # Moving upward
                     self.out_count += 1
                     self.classwise_count[self.names[cls]]["OUT"] += 1
-                    
-                    #custom code
+
+                    # custom code
                     if self.out_previous_track_id is None:
-                        self.out_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.out_inter_vehicle_frame_gap[track_id]["frame_start"] = self.frame_no
                         self.out_previous_track_id = track_id
                     else:
-                        self.out_inter_vehicle_frame_gap[self.out_previous_track_id]['frame_end'] = self.frame_no
-                        self.out_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.out_inter_vehicle_frame_gap[self.out_previous_track_id]["frame_end"] = self.frame_no
+                        self.out_inter_vehicle_frame_gap[track_id]["frame_start"] = self.frame_no
                         self.out_previous_track_id = track_id
                 self.counted_ids.append(track_id)
 
@@ -203,26 +200,26 @@ class ObjectCounter(BaseSolution):
                 ):  # Moving right or downward
                     self.in_count += 1
                     self.classwise_count[self.names[cls]]["IN"] += 1
-                    
-                    #custom code
+
+                    # custom code
                     if self.in_previous_track_id is None:
-                        self.in_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.in_inter_vehicle_frame_gap[track_id]["frame_start"] = self.frame_no
                         self.in_previous_track_id = track_id
                     else:
-                        self.in_inter_vehicle_frame_gap[self.in_previous_track_id]['frame_end'] = self.frame_no
-                        self.in_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.in_inter_vehicle_frame_gap[self.in_previous_track_id]["frame_end"] = self.frame_no
+                        self.in_inter_vehicle_frame_gap[track_id]["frame_start"] = self.frame_no
                         self.in_previous_track_id = track_id
                 else:  # Moving left or upward
                     self.out_count += 1
                     self.classwise_count[self.names[cls]]["OUT"] += 1
-                    
-                    #custom code
+
+                    # custom code
                     if self.out_previous_track_id is None:
-                        self.out_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.out_inter_vehicle_frame_gap[track_id]["frame_start"] = self.frame_no
                         self.out_previous_track_id = track_id
                     else:
-                        self.out_inter_vehicle_frame_gap[self.out_previous_track_id]['frame_end'] = self.frame_no
-                        self.out_inter_vehicle_frame_gap[track_id]['frame_start'] = self.frame_no
+                        self.out_inter_vehicle_frame_gap[self.out_previous_track_id]["frame_end"] = self.frame_no
+                        self.out_inter_vehicle_frame_gap[track_id]["frame_start"] = self.frame_no
                         self.out_previous_track_id = track_id
                 self.counted_ids.append(track_id)
 
@@ -287,7 +284,7 @@ class ObjectCounter(BaseSolution):
             if len(self.track_history[track_id]) > 1:
                 prev_position = self.track_history[track_id][-2]
             self.count_objects(self.track_history[track_id][-1], track_id, prev_position, cls)  # object counting
-        
+
         self.update_inter_vehicle_frame_gap()
         plot_im = self.annotator.result()
         self.display_counts(plot_im)  # Display the counts on the frame
@@ -300,17 +297,15 @@ class ObjectCounter(BaseSolution):
             out_count=self.out_count,
             classwise_count=dict(self.classwise_count),
             total_tracks=len(self.track_ids),
-            
-            #custom result properties
-            in_inter_vehicle_frame_gap_mean = self.in_inter_vehicle_frame_gap_mean,
-            in_inter_vehicle_frame_gap_std = self.in_inter_vehicle_frame_gap_std,
-            in_inter_vehicle_frame_gap_min = self.in_inter_vehicle_frame_gap_min,
-            in_inter_vehicle_frame_gap_max = self.in_inter_vehicle_frame_gap_max,
-            in_inter_vehicle_frame_gap_median = self.in_inter_vehicle_frame_gap_median,
-            out_inter_vehicle_frame_gap_mean = self.out_inter_vehicle_frame_gap_mean,
-            out_inter_vehicle_frame_gap_std = self.out_inter_vehicle_frame_gap_std,
-            out_inter_vehicle_frame_gap_min = self.out_inter_vehicle_frame_gap_min,
-            out_inter_vehicle_frame_gap_max = self.out_inter_vehicle_frame_gap_max,
-            out_inter_vehicle_frame_gap_median = self.out_inter_vehicle_frame_gap_median,
-            
+            # custom result properties
+            in_inter_vehicle_frame_gap_mean=self.in_inter_vehicle_frame_gap_mean,
+            in_inter_vehicle_frame_gap_std=self.in_inter_vehicle_frame_gap_std,
+            in_inter_vehicle_frame_gap_min=self.in_inter_vehicle_frame_gap_min,
+            in_inter_vehicle_frame_gap_max=self.in_inter_vehicle_frame_gap_max,
+            in_inter_vehicle_frame_gap_median=self.in_inter_vehicle_frame_gap_median,
+            out_inter_vehicle_frame_gap_mean=self.out_inter_vehicle_frame_gap_mean,
+            out_inter_vehicle_frame_gap_std=self.out_inter_vehicle_frame_gap_std,
+            out_inter_vehicle_frame_gap_min=self.out_inter_vehicle_frame_gap_min,
+            out_inter_vehicle_frame_gap_max=self.out_inter_vehicle_frame_gap_max,
+            out_inter_vehicle_frame_gap_median=self.out_inter_vehicle_frame_gap_median,
         )
